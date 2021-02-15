@@ -52,6 +52,23 @@ namespace lox
                 case '=': AddToken(Match('=') ? EQUAL_EQUAL : EQUAL); break;
                 case '<': AddToken(Match('=') ? LESS_EQUAL : LESS); break;
                 case '>': AddToken(Match('=') ? GREATER_EQUAL : GREATER); break;
+                case '/': 
+                    if (Match('/')) {
+                        // A comment goes until the end of the line.
+                        while (peek() != '\n' && !IsAtEnd()) Advance();
+                    } else {
+                        AddToken(SLASH);
+                    }
+                    break;
+
+                // Skip whitespace and newlines (increment line for newlines)
+                case ' ':
+                case '\r':
+                case '\t':
+                    break;
+                case '\n':
+                    line++;
+                    break;
                 default: Lox.Error(line, "Unexpected character."); break;
             }
         }
@@ -61,8 +78,16 @@ namespace lox
             if (IsAtEnd()) return false;
             if (source[current] != expected) return false;
 
+            // Consume if current character matches expected.
             current++;
             return true;
+        }
+
+        /* Implement lookahead (like Advance, but don't consume the char) */
+        private char peek()
+        {
+            if (IsAtEnd()) return '\0';
+            return source[current];
         }
 
         private char Advance()
