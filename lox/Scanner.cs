@@ -55,7 +55,7 @@ namespace lox
                 case '/': 
                     if (Match('/')) {
                         // A comment goes until the end of the line.
-                        while (peek() != '\n' && !IsAtEnd()) Advance();
+                        while (Peek() != '\n' && !IsAtEnd()) Advance();
                     } else {
                         AddToken(SLASH);
                     }
@@ -69,8 +69,49 @@ namespace lox
                 case '\n':
                     line++;
                     break;
-                default: Lox.Error(line, "Unexpected character."); break;
+                case '"': String(); break;
+                default: 
+                    if (Char.IsDigit(c)) {
+                        Number();
+                    } else { 
+                        Lox.Error(line, "Unexpected character."); 
+                    }
+                    break;
             }
+        }
+
+        private void Number()
+        {
+            while (Char.IsDigit(Peek())) _ = Advance();
+
+            // Look for a fractional part.
+            if (Peek() == '.' && Char.IsDigit(PeekNext())) {
+                // Consume the '.'
+                _ = Advance();
+
+                while (Char.IsDigit(Peek())) _ = Advance();
+            }
+
+            AddToken(NUMBER,
+                Double.Parse(source.Substring(start, current)));
+        }
+
+        private void String()
+        { 
+            while (Peek() != '"' && !IsAtEnd()) {
+                if (Peek() == '\n') line++;
+                Advance();
+            }
+
+            if (IsAtEnd()) {
+                Lox.Error(line, "Unterminated string.");
+                return;
+            }
+
+            _ = Advance();
+
+            string value = source.Substring(start + 1, source.Length - current - 1);
+            AddToken(STRING, value);
         }
 
         private Boolean Match(char expected)
@@ -84,10 +125,15 @@ namespace lox
         }
 
         /* Implement lookahead (like Advance, but don't consume the char) */
-        private char peek()
+        private char Peek()
         {
             if (IsAtEnd()) return '\0';
             return source[current];
+        }
+
+        private char PeekNext() {
+            if (current + 1 >= source.Length) return '\0';
+            return source[current + 1];
         }
 
         private char Advance()
